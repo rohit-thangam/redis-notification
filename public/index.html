@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notification Client</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Real-Time Notifications</h1>
+        <div id="notifications" class="notifications"></div>
+
+        <div class="button-container">
+            <button id="showHistory" class="history-button">Show History</button>
+            <button id="clearHistory" class="clear-button">Delete History</button>
+        </div>
+
+        <div id="history" class="history"></div>
+
+        <!-- Like Section -->
+        <h2>Like a Post</h2>
+        <input id="likeUserName" type="text" placeholder="Your Name">
+        <input id="likePostName" type="text" placeholder="Post Name">
+        <button id="likeButton">Like</button>
+
+        <!-- Follow Section -->
+        <h2>Follow User</h2>
+        <input id="followerName" type="text" placeholder="Your Name">
+        <input id="followeeName" type="text" placeholder="Follow User's Name">
+        <button id="followButton">Follow</button>
+
+        <!-- Comment Section -->
+        <h2>Comment on a Post</h2>
+        <input id="commentUserName" type="text" placeholder="Your Name">
+        <input id="commentPostName" type="text" placeholder="Post Name">
+        <input id="commentText" type="text" placeholder="Your Comment">
+        <button id="commentButton">Comment</button>
+    </div>
+
+    <script>
+        const socket = io('http://localhost:3000');
+
+        // Listen for notifications
+        socket.on('notification', (message) => {
+            console.log('New notification:', message);
+            const notificationsDiv = document.getElementById('notifications');
+            const notificationElement = document.createElement('div');
+            notificationElement.className = 'notification';
+            notificationElement.innerHTML = `<p>${message}</p>`;
+            notificationsDiv.appendChild(notificationElement);
+
+            // Remove notification after a few seconds
+            setTimeout(() => {
+                notificationsDiv.removeChild(notificationElement);
+            }, 5000);
+        });
+
+        // Fetch notification history
+        document.getElementById('showHistory').addEventListener('click', async () => {
+            const response = await fetch('/notifications/history');
+            const history = await response.json();
+            const historyDiv = document.getElementById('history');
+            historyDiv.innerHTML = ''; // Clear previous history
+
+            if (history.length === 0) {
+                historyDiv.innerHTML = '<p>No notification history available.</p>';
+                return;
+            }
+
+            history.forEach((notification) => {
+                const historyElement = document.createElement('div');
+                historyElement.className = 'notification history-notification';
+                historyElement.innerHTML = `<p>${notification}</p>`;
+                historyDiv.appendChild(historyElement);
+            });
+        });
+
+        // Clear notification history
+        document.getElementById('clearHistory').addEventListener('click', async () => {
+            const response = await fetch('/notifications', {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                document.getElementById('history').innerHTML = '<p>Notification history cleared.</p>';
+            }
+        });
+
+        // Like button functionality
+        document.getElementById('likeButton').addEventListener('click', async () => {
+            const userName = document.getElementById('likeUserName').value;
+            const postName = document.getElementById('likePostName').value;
+
+            const response = await fetch('/notifications/like', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ userName, postName }),
+            });
+
+            const data = await response.json();
+            console.log(data);
+        });
+
+        // Follow button functionality
+        document.getElementById('followButton').addEventListener('click', async () => {
+            const followerName = document.getElementById('followerName').value;
+            const followeeName = document.getElementById('followeeName').value;
+
+            const response = await fetch('/notifications/follow', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ followerName, followeeName }),
+            });
+
+            const data = await response.json();
+            console.log(data);
+        });
+
+        // Comment button functionality
+        document.getElementById('commentButton').addEventListener('click', async () => {
+            const userName = document.getElementById('commentUserName').value;
+            const postName = document.getElementById('commentPostName').value;
+            const comment = document.getElementById('commentText').value;
+
+            const response = await fetch('/notifications/comment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ userName, postName, comment }),
+            });
+
+            const data = await response.json();
+            console.log(data);
+        });
+    </script>
+</body>
+</html>
